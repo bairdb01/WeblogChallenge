@@ -1,0 +1,55 @@
+Field	Description
+timestamp
+The time when the load balancer received the request from the client, in ISO 8601 format.
+elb
+The name of the load balancer
+
+client:port
+The IP address and port of the requesting client.
+
+backend:port
+The IP address and port of the registered instance that processed this request.
+If the client didn't send a full request, the load balancer can't dispatch the request to a registered instance, and this value is set to -.
+request_processing_time
+[HTTP listener] The total time elapsed, in seconds, from the time the load balancer received the request and sent it to a registered instance.
+[TCP listener] The total time elapsed, in seconds, from the time the load balancer accepted a TCP/SSL connection from a client to the time the load balancer sends the first byte of data to a registered instance.
+This value is set to -1 if the load balancer can't dispatch the request to a registered instance. This can happen if the registered instance closes the connection before the idle timeout or if the client sends a malformed request. Additionally, for TCP listeners, this can happen if the client establishes a connection with the load balancer but does not send any data.
+
+backend_processing_time
+[HTTP listener] The total time elapsed, in seconds, from the time the load balancer sent the request to a registered instance until the instance started to send the response headers.
+[TCP listener] The total time elapsed, in seconds, for the load balancer to successfully establish a connection to a registered instance.
+This value is set to -1 if the load balancer can't dispatch the request to a registered instance. This can happen if the registered instance closes the connection before the idle timeout or if the client sends a malformed request.
+
+response_processing_time
+[HTTP listener] The total time elapsed (in seconds) from the time the load balancer received the response header from the registered instance until it started to send the response to the client. This includes both the queuing time at the load balancer and the connection acquisition time from the load balancer to the back end.
+[TCP listener] The total time elapsed, in seconds, from the time the load balancer received the first byte from the registered instance until it started to send the response to the client.
+This value is set to -1 if the load balancer can't dispatch the request to a registered instance. This can happen if the registered instance closes the connection before the idle timeout or if the client sends a malformed request.
+
+elb_status_code
+[HTTP listener] The status code of the response from the load balancer.
+
+backend_status_code
+[HTTP listener] The status code of the response from the registered instance.
+
+received_bytes
+The size of the request, in bytes, received from the client (requester).
+[HTTP listener] The value includes the request body but not the headers.
+[TCP listener] The value includes the request body and the headers.
+
+sent_bytes
+The size of the response, in bytes, sent to the client (requester).
+[HTTP listener] The value includes the response body but not the headers.
+[TCP listener] The value includes the request body and the headers.
+
+request
+The request line from the client enclosed in double quotes and logged in the following format: HTTP Method + Protocol://Host header:port + Path + HTTP version.
+[TCP listener] The URL is three dashes, each separated by a space, and ending with a space ("- - - ").
+
+user_agent
+[HTTP/HTTPS listener] A User-Agent string that identifies the client that originated the request. The string consists of one or more product identifiers, product[/version]. If the string is longer than 8 KB, it is truncated.
+
+ssl_cipher
+[HTTPS/SSL listener] The SSL cipher. This value is recorded only if the incoming SSL/TLS connection was established after a successful negotiation. Otherwise, the value is set to -.
+
+ssl_protocol
+[HTTPS/SSL listener] The SSL protocol. This value is recorded only if the incoming SSL/TLS connection was established after a successful negotiation. Otherwise, the value is set to -.
