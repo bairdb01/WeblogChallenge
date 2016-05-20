@@ -1,6 +1,6 @@
-Field	Description
 timestamp
 The time when the load balancer received the request from the client, in ISO 8601 format.
+
 elb
 The name of the load balancer
 
@@ -10,6 +10,7 @@ The IP address and port of the requesting client.
 backend:port
 The IP address and port of the registered instance that processed this request.
 If the client didn't send a full request, the load balancer can't dispatch the request to a registered instance, and this value is set to -.
+
 request_processing_time
 [HTTP listener] The total time elapsed, in seconds, from the time the load balancer received the request and sent it to a registered instance.
 [TCP listener] The total time elapsed, in seconds, from the time the load balancer accepted a TCP/SSL connection from a client to the time the load balancer sends the first byte of data to a registered instance.
