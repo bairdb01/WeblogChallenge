@@ -1,20 +1,18 @@
 from pyspark import SparkContext
 from datetime import datetime
 from datetime import timedelta
-import shlex
 import os, errno
 
 # To run program: spark-submit app.py
 
 # Creates a tuple where the ip is the key and the related data is put in a list of values
 def ip_package(lineTuple):
-    if len(lineTuple) != 15:
+    if len(lineTuple) < 17:
         return [];
-
 
     # Only need the time, website, and ip (without the port number)
     ip = lineTuple[2].split(':')[0];
-    sessionData = [lineTuple[0], lineTuple[11].split(' ')[1]];
+    sessionData = [lineTuple[0], lineTuple[12]];
     package = [ip, sessionData];
 
     return package;
@@ -46,7 +44,7 @@ def sessionize(package):
                 if (sessionStart != datetime.min):
                     # Record the length of the old session; leading 0 for formatting
                     sessionTime = sessionIdleLimit - sessionStart;
-                    sessionsLenFP.write("0" + str(sessionTime) + " " + package[0] + "\n");
+                    sessionsLenFP.write(str(sessionTime.total_seconds()) + " " + package[0] + "\n");
 
                 # Begin the new session
                 sessionStart = datetime.strptime(hit[0], timeFormat);
@@ -66,43 +64,32 @@ def sessionize(package):
         if (sessionStart != datetime.min):
             # Record the length of the last session
             sessionTime = sessionIdleLimit - sessionStart;
-            sessionsLenFP.write("0" + str(sessionTime) + " " + package[0] + "\n");
+            sessionsLenFP.write(str(sessionTime.total_seconds()) + " " + package[0] + "\n");
 
         sessionsFP.close();
         sessionsLenFP.close();
     except IOError:
         print ("Could not write to file.");
 
-# Parses the line from the sessionLength file
-def sessionParser(line):
-    package = shlex.split(line);
-    times = package[0].replace(".",":").split(":");
-
-    if len(package[0]) == 4:
-        timeStamp = timedelta(hours=int(times[0]), minutes=int(times[1]), seconds=int(times[2]), microseconds=int(times[3]));
-    else:
-        timeStamp = timedelta(hours=int(times[0]), minutes=int(times[1]), seconds=int(times[2]), microseconds=000000);
-
-    return [timeStamp.total_seconds(), package[1]];
-
 if __name__ == "__main__":
     sc = SparkContext('local','example')
-    logTuples = sc.textFile("data/test.log").map(lambda line: ip_package(shlex.split(line))).collect();
 
     # Group similar ip data together (ip, [[timeStamp, url], ...])
     # Assumes the log file is sorted by time already
     # returns tuple of collected data
-    agged = sc.parallelize(logTuples).map(lambda (x, y): (x, [y])) \
-                                     .reduceByKey(lambda a, b : a + b) \
-                                     .foreach(sessionize);
+    logTuples = sc.textFile("data/sample.log").map(lambda line: ip_package(line.replace('\"', "").split(" "))) \
+                                            .map(lambda (x, y): (x, [y])) \
+                                            .reduceByKey(lambda a, b : a + b) \
+                                            .foreach(sessionize);
 
-    avg = sc.textFile("sessions/sessionLength.log").map(lambda line: sessionParser(line)) \
+    # Parses the line from the sessionLength file
+    avg = sc.textFile("sessions/sessionLength.log").map(lambda line: line.split(" ")) \
                                                    .collect();
 
     # Sum up the session times to find the average
     totalDelta = 0
     for x in avg:
-        totalDelta += x[0];
+        totalDelta += float(x[0]);
     totalAVG = totalDelta/len(avg);
 
     try:
@@ -112,17 +99,16 @@ if __name__ == "__main__":
     except IOError:
         print ("Could not write/open file.")
 
-
     # Find users with session times longer than average
     try:
         fp = open("sessions/longUsers.log", "a");
 
         for x in avg:
             if x[0] > totalAVG:
-                fp.write(str(x));
+                fp.write(str(x[0]) + " " + str(x[1]));
                 fp.write("\n")
 
         fp.close();
-        
+
     except IOError:
         print ("Could not write/open file.");
